@@ -30,8 +30,8 @@ const archiveImages = async (server) => {
             resolve(downloadUrl); // Повертаємо URL для завантаження
 
             // Після успішної архівації видаляємо файли з папки
-            setTimeout(() => { deleteFilesInDirectory(imagesDir); }, (5 * 60 * 1000))
-
+            // setTimeout(() => { deleteFilesInDirectory(imagesDir); }, (5 * 60 * 1000))
+            deleteFilesInDirectory(imagesDir)
             // deleteFileAfterTimeout(archivePath, 10000)
         });
 
