@@ -2,6 +2,8 @@ const archiver = require('archiver'); // Для створення архіві�
 const fs = require('fs');
 const { archivePath, imagesDir, archiveDir } = require('./const');
 const { deleteFilesInDirectory, deleteFileAfterTimeout } = require('./deleteFilesInDirectory');
+
+
 // Перевірка, чи існує папка "archive", якщо ні — створюємо її
 if (!fs.existsSync(archiveDir)) {
     fs.mkdirSync(archiveDir);
@@ -28,7 +30,8 @@ const archiveImages = async (server) => {
             resolve(downloadUrl); // Повертаємо URL для завантаження
 
             // Після успішної архівації видаляємо файли з папки
-            deleteFilesInDirectory(imagesDir);
+            setTimeout(() => { deleteFilesInDirectory(imagesDir); }, (5 * 60 * 1000))
+
             // deleteFileAfterTimeout(archivePath, 10000)
         });
 

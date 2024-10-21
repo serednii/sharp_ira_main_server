@@ -26,7 +26,6 @@ class CallServer {
         while (true) {
             if (finish) { break }
 
-
             if (this.controller.signal.aborted) {
                 this.processingStatus.status = 'cancelled';
                 break;
