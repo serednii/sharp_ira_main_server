@@ -41,9 +41,16 @@ class CallServer {
             if (res) {
                 // console.log('res', res)
                 const base64Data = res[0].imageBase64.replace(/^data:image\/jpeg;base64,/, '');
-                const filePath = path.join(this.imagesDir, res[0].fileName);
-                fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
-                res[0].imageUrl = `${server}${res[0].fileName}`
+
+                const filePath = path.join(this.imagesDir, this.idQuery.idQuery);
+                const filePathName = path.join(filePath, res[0].fileName);
+
+                if (!fs.existsSync(filePath)) {
+                    fs.mkdirSync(filePath);
+                }
+
+                fs.writeFileSync(filePathName, Buffer.from(base64Data, 'base64'));
+                // res[0].imageUrl = `${server}${res[0].fileName}`
 
                 this.processedImages.push(res)
                 this.processingStatus.progress = index + 1;
@@ -61,8 +68,8 @@ class CallServer {
         if (CallServer.isServersTrue.length === 0) {
             try {
                 this.idQuery.status = "archive images"
-                const downloadLink = await archiveImages();
-                await deleteFilesInDirectory();
+                const downloadLink = await archiveImages(this.idQuery.idQuery);
+                // await deleteFilesInDirectory(this.idQuery.idQuery);
                 this.idQuery.status = "Downloading photos from the server"
                 this.processingStatus.status = 'cancelled';
                 this.res.json({ processedImages: this.processedImages, downloadLink });
