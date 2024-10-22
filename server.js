@@ -12,6 +12,8 @@ const { CallServer } = require("./utils/CallServer");
 const { generateNewServer } = require("./utils/generateNewServer");
 const { archiveImages } = require("./utils/archiveImages");
 const { imagesDir, archiveDir, workerServers, numberServers } = require('./utils/const');
+const { deleteArchive } = require('./utils/deleteFilesInDirectory');
+const { urlWorkServer } = require('./utils/const');
 
 myEmitter.setMaxListeners(200); // Збільшуємо ліміт до 20
 const app = express();
@@ -102,13 +104,7 @@ app.get('/archive/:file', (req, res) => {
                 res.status(500).send('Помилка при завантаженні файлу.');
             } else {
                 // Успішне завантаження, видаляємо файл
-                fs.unlink(filePath, (err) => {
-                    if (err) {
-                        console.error(`Помилка при видаленні файлу ${filePath}: ${err}`);
-                    } else {
-                        console.log(`Файл успішно видалено: ${filePath}`);
-                    }
-                });
+                deleteArchive(filePath)
             }
         });
     } else {
@@ -137,9 +133,10 @@ app.post('/cancel', (req, res) => {
 });
 
 app.post('/init_progress', (req, res) => {
-    const { idQuery } = req.body;
+    const { idQuery, urlWorkServer: url } = req.body;
 
     dataIdQuery[idQuery] = { status: "Uploading files to the server", idQuery }
+    urlWorkServer.url = String(url)
     console.log('req.body.idQuery', idQuery)
     processingStatus.progress = 0;
     processingStatus.total = 0;

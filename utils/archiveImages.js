@@ -1,8 +1,10 @@
 const archiver = require('archiver'); // Для створення архівів
 const fs = require('fs');
-const { archivePath, imagesDir, archiveDir } = require('./const');
-const { deleteFilesInDirectory, deleteFileAfterTimeout } = require('./deleteFilesInDirectory');
+const path = require('path');
 
+const { archivePath, imagesDir, archiveDir } = require('./const');
+const { deleteDirectory, deleteArchive, deleteFileAfterTimeout } = require('./deleteFilesInDirectory');
+const { urlWorkServer } = require('./const');
 
 // Перевірка, чи існує папка "archive", якщо ні — створюємо її
 if (!fs.existsSync(archiveDir)) {
@@ -14,25 +16,28 @@ if (fs.existsSync(archivePath) && fs.lstatSync(archivePath).isDirectory()) {
     throw new Error(`Помилка: ${archivePath} є директорією, а не файлом.`);
 }
 
+const archiveImages = async (idQuery) => {
+    const newImagesDir = path.join(imagesDir, idQuery);
+    const newArchivePath = path.join(archiveDir, `${idQuery}_images_archive.zip`);
+    const downloadUrlArchive = path.join(String(urlWorkServer.url), `/archive/${idQuery}_images_archive.zip`);
 
-
-const archiveImages = async (server) => {
-    const output = fs.createWriteStream(archivePath); // Створюємо потік для запису архіву
+    const output = fs.createWriteStream(newArchivePath); // Створюємо потік для запису архіву
 
     const archive = archiver('zip', {
         zlib: { level: 9 } // Опція для максимального стиснення
     });
 
     return new Promise((resolve, reject) => {
-        output.on('close', function () {
+        //папка з малюнками  + папка idQuery
+        console.log('newImagesDir', newImagesDir)
+        output.on('close', async function () {
             console.log(`${archive.pointer()} байт записано до архіву`);
-            const downloadUrl = `/archive/images_archive.zip`; // URL для завантаження
-            resolve(downloadUrl); // Повертаємо URL для завантаження
 
             // Після успішної архівації видаляємо файли з папки
-            // setTimeout(() => { deleteFilesInDirectory(imagesDir); }, (5 * 60 * 1000))
-            deleteFilesInDirectory(imagesDir)
+            setTimeout(() => { deleteArchive(imagesDir) }, (5 * 60 * 1000))
+            // await deleteDirectory(newImagesDir)
             // deleteFileAfterTimeout(archivePath, 10000)
+            resolve(downloadUrlArchive); // Повертаємо URL для завантаження
         });
 
         archive.on('error', function (err) {
@@ -42,7 +47,7 @@ const archiveImages = async (server) => {
         archive.pipe(output);
 
         // Додаємо всі зображення з папки до архіву
-        archive.directory(imagesDir, false);
+        archive.directory(newImagesDir, false);
 
         // Завершуємо архів
         archive.finalize();
