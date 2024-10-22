@@ -92,7 +92,7 @@ app.use('/images', express.static(imagesDir));
 // Маршрут для завантаження конкретного файлу
 app.get('/archive/:file', (req, res) => {
     const filePath = path.join(archiveDir, req.params.file);
-    console.log('archive/:file')
+    console.log('archive/:file', req.params.file)
     // Перевіряємо, чи існує файл
     if (fs.existsSync(filePath)) {
         console.log('Завантаження архіву:', filePath);
@@ -137,7 +137,7 @@ app.post('/init_progress', (req, res) => {
 
     dataIdQuery[idQuery] = { status: "Uploading files to the server", idQuery }
     urlWorkServer.url = String(url)
-    console.log('req.body.idQuery', idQuery)
+    console.log('req.body.idQuery', idQuery, url)
     processingStatus.progress = 0;
     processingStatus.total = 0;
     processingStatus.status = 'processing';

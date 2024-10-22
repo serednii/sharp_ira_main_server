@@ -19,8 +19,10 @@ if (fs.existsSync(archivePath) && fs.lstatSync(archivePath).isDirectory()) {
 const archiveImages = async (idQuery) => {
     const newImagesDir = path.join(imagesDir, idQuery);
     const newArchivePath = path.join(archiveDir, `${idQuery}_images_archive.zip`);
-    const downloadUrlArchive = path.join(String(urlWorkServer.url), `/archive/${idQuery}_images_archive.zip`);
+    // const downloadUrlArchive = path.join(urlWorkServer.url, `/archive/${idQuery}_images_archive.zip`);
+    const downloadUrlArchive = `${urlWorkServer.url}/archive/${idQuery}_images_archive.zip`
 
+    console.log('req.params.file archiveImages', urlWorkServer.url, downloadUrlArchive)
     const output = fs.createWriteStream(newArchivePath); // Створюємо потік для запису архіву
 
     const archive = archiver('zip', {
@@ -34,8 +36,8 @@ const archiveImages = async (idQuery) => {
             console.log(`${archive.pointer()} байт записано до архіву`);
 
             // Після успішної архівації видаляємо файли з папки
-            setTimeout(() => { deleteArchive(imagesDir) }, (5 * 60 * 1000))
-            // await deleteDirectory(newImagesDir)
+            setTimeout(() => { deleteArchive(newArchivePath) }, (TIME_DELETE_ARCHIVE))
+            await deleteDirectory(newImagesDir)
             // deleteFileAfterTimeout(archivePath, 10000)
             resolve(downloadUrlArchive); // Повертаємо URL для завантаження
         });
