@@ -3,12 +3,13 @@ const { sendData } = require("./sendData")
 const path = require('path');
 const fs = require('fs');
 const { archiveImages } = require('./archiveImages');
+const { deleteFilesInDirectory, deleteFileAfterTimeout } = require('./deleteFilesInDirectory');
 
 
 class CallServer {
     static isServersTrue = [];
 
-    constructor({ controller, nextFormData, nextServer, processingStatus, processedImages, processedImagesUrl, imagesDir, res }) {
+    constructor({ controller, nextFormData, nextServer, processingStatus, processedImages, processedImagesUrl, imagesDir, idQuery, res }) {
         this.controller = controller;
         this.nextFormData = nextFormData;
         this.nextServer = nextServer;
@@ -17,6 +18,7 @@ class CallServer {
         this.processedImagesUrl = processedImagesUrl;
         this.res = res;
         this.imagesDir = imagesDir;
+        this.idQuery = idQuery;
         this.#callNewServer()
     }
 
@@ -57,9 +59,12 @@ class CallServer {
 
         CallServer.isServersTrue.pop();
         if (CallServer.isServersTrue.length === 0) {
-            this.processingStatus.status = 'cancelled';
             try {
+                this.idQuery.status = "archive images"
                 const downloadLink = await archiveImages();
+                await deleteFilesInDirectory();
+                this.idQuery.status = "Downloading photos from the server"
+                this.processingStatus.status = 'cancelled';
                 this.res.json({ processedImages: this.processedImages, downloadLink });
                 console.log('url', downloadLink)
             } catch (error) {

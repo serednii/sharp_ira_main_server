@@ -9,14 +9,14 @@ const EventEmitter = require('events');
 const myEmitter = new EventEmitter();
 const { generatorFormData } = require("./utils/generatorFormData");
 const { CallServer } = require("./utils/CallServer");
-const { generateNewServer } = require("./utils/servers");
+const { generateNewServer } = require("./utils/generateNewServer");
 const { archiveImages } = require("./utils/archiveImages");
 const { imagesDir, archiveDir, workerServers, numberServers } = require('./utils/const');
 
 myEmitter.setMaxListeners(200); // Збільшуємо ліміт до 20
 const app = express();
 const port = 8000;
-
+const dataIdQuery = {}
 // Створимо директорію для збереження зображень, якщо вона не існує
 if (!fs.existsSync(imagesDir)) {
     fs.mkdirSync(imagesDir);
@@ -26,35 +26,30 @@ if (!fs.existsSync(archiveDir)) {
     fs.mkdirSync(archiveDir);
 }
 
-
-
-
-console.log(workerServers)
-
-
-
-app.use(cors());
-
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
+const processingStatus = {}; // Об'єкт для зберігання статусу обробки
 
 let = promises = [];
-const processingStatus = {}; // Об'єкт для зберігання статусу обробки
-// function controlProcessing() {
-//     setInterval(() => {
-//         console.log('promises', promises[0])
-//     }, 500)
-// }
-
-
 let controller; // Один controller для всіх запитів
-app.post('/upload-multiple', upload.array('images', 200), async (req, res) => {
+
+console.log(workerServers)
+app.use(express.json());
+app.use(cors());
+
+app.post('/upload-multiple', upload.array('images', 300), async (req, res) => {
+    // console.clear()
     console.log('upload-multiple')
-    console.clear()
+
     if (!req.files || req.files.length === 0) {
         return res.status(400).send('Будь ласка, завантажте зображення');
     }
-    console.log(req.files[0])
+
+    const { idQuery } = req.body;
+    dataIdQuery[idQuery] = { status: "Image processing", idQuery }
+    console.log('req.idQuery', idQuery)
+
+    // console.log(req.files[0])
     controller = new AbortController();
 
     processingStatus.progress = 0;
@@ -77,6 +72,7 @@ app.post('/upload-multiple', upload.array('images', 200), async (req, res) => {
         processedImages,
         processedImagesUrl,
         imagesDir,
+        idQuery: dataIdQuery[idQuery],
         res,
     }
 
@@ -89,7 +85,6 @@ app.post('/upload-multiple', upload.array('images', 200), async (req, res) => {
 app.use('/images', express.static(imagesDir));
 
 // app.use('/archive', express.static(path.join(__dirname, 'archive')));
-
 
 
 // Маршрут для завантаження конкретного файлу
@@ -136,6 +131,42 @@ app.get('/download-archive', async (req, res) => {
     }
 });
 
+app.post('/cancel', (req, res) => {
+    controller.abort(); // Скасовуємо всі запити
+    res.send('Запит скасовано');
+});
+
+app.post('/init_progress', (req, res) => {
+    const { idQuery } = req.body;
+
+    dataIdQuery[idQuery] = { status: "Uploading files to the server", idQuery }
+    console.log('req.body.idQuery', idQuery)
+    processingStatus.progress = 0;
+    processingStatus.total = 0;
+    processingStatus.status = 'processing';
+    res.send('Дані проініціалізовано');
+});
+
+// Додайте новий ендпоінт для отримання статусу
+app.post('/status', (req, res) => {
+    const { idQuery } = req.body;
+    console.log('get status', idQuery)
+    // console.log(dataIdQuery)
+    res.json({ ...processingStatus, download: dataIdQuery[idQuery]?.status });
+    // res.json(processingStatus);
+
+
+});
+
+app.get('/statusres', (req, res) => {
+    console.log('get status')
+    res.json("get status");
+});
+
+app.listen(port, () => {
+    console.log(`Центральний сервер працює на http://localhost:${port}`);
+});
+
 // app.get('/archive/:file', (req, res) => {
 //     console.log('download archive')
 //     const filePath = path.join(archiveDir, req.params.file);
@@ -168,33 +199,6 @@ app.get('/download-archive', async (req, res) => {
 //     }
 // });
 
-app.post('/cancel', (req, res) => {
-    controller.abort(); // Скасовуємо всі запити
-    res.send('Запит скасовано');
-});
-
-app.post('/init_progress', (req, res) => {
-    processingStatus.progress = 0;
-    processingStatus.status = 'processing';
-    res.send('Запит скасовано');
-});
-
-// Додайте новий ендпоінт для отримання статусу
-app.get('/status', (req, res) => {
-    console.log('get status')
-    res.json(processingStatus);
-});
-
-app.get('/statusres', (req, res) => {
-    console.log('get status')
-    res.json("get status");
-});
-
-
-
-app.listen(port, () => {
-    console.log(`Центральний сервер працює на http://localhost:${port}`);
-});
 
 
 //**************************************************************************************************** */
