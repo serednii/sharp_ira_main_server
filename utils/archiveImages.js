@@ -36,7 +36,7 @@ const archiveImages = async (idQuery) => {
             console.log(`${archive.pointer()} байт записано до архіву`);
 
             // Після успішної архівації видаляємо файли з папки
-            setTimeout(() => { deleteArchive(newArchivePath) }, (TIME_DELETE_ARCHIVE))
+            setTimeout(() => { deleteArchive(newArchivePath) }, 50000)
             await deleteDirectory(newImagesDir)
             // deleteFileAfterTimeout(archivePath, 10000)
             resolve(downloadUrlArchive); // Повертаємо URL для завантаження
