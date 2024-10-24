@@ -36,15 +36,35 @@ const fs = require('fs').promises;
 //         console.error(`Помилка: ${err}`);
 //     }
 // };
+
+
+// const deleteArchive = async (filePath) => {
+//     console.log('filePath', filePath)
+//     fs.unlink(filePath, (err) => {
+//         if (err) {
+//             console.error(`Помилка при видаленні файлу ${filePath}: ${err}`);
+//         } else {
+//             console.log(`Файл успішно видалено: ${filePath}`);
+//         }
+//     });
+// }
+
 const deleteArchive = async (filePath) => {
-    fs.unlink(filePath, (err) => {
-        if (err) {
-            console.error(`Помилка при видаленні файлу ${filePath}: ${err}`);
+    try {
+        console.log('Attempting to delete file:', filePath);
+        await fs.unlink(filePath);
+        console.log(`Файл успішно видалено: ${filePath}`);
+        return true;
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            console.log(`Файл не існує: ${filePath}`);
+            return false;
         } else {
-            console.log(`Файл успішно видалено: ${filePath}`);
+            console.error(`Помилка при видаленні файлу ${filePath}: ${error.message}`);
+            throw error; // Прокидуємо помилку далі, якщо це не відсутність файлу
         }
-    });
-}
+    }
+};
 
 const deleteDirectory = async (directory) => {
     try {
