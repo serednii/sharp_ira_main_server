@@ -7,10 +7,9 @@ const archivePath = path.join(archiveDir, 'images_archive.zip'); // Шлях д�
 
 const numberServers = 2;
 
-const workerServers = Array.from({ length: numberServers }).map((_, i) => `http://localhost:${8100 + i}/process-images`)
+// const workerServers = Array.from({ length: numberServers }).map((_, i) => `http://localhost:${8100 + i}/process-images`)
 
-// const workerServers = ['https://sharpiraworksserver-production.up.railway.app/process-images',
-//     'https://athletic-inspiration-production.up.railway.app/process-images']
+const workerServers = ['https://sharpiraworksserver-production.up.railway.app/process-images']
 
 const urlWorkServer = { url: "" };
 
