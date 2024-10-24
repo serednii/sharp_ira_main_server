@@ -18,7 +18,7 @@ const { urlWorkServer } = require('./utils/const');
 myEmitter.setMaxListeners(200); // Збільшуємо ліміт до 20
 const app = express();
 const port = 8000;
-const dataIdQuery = {}
+const dataQuery = {}
 // Створимо директорію для збереження зображень, якщо вона не існує
 if (!fs.existsSync(imagesDir)) {
     fs.mkdirSync(imagesDir);
@@ -30,7 +30,6 @@ if (!fs.existsSync(archiveDir)) {
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
-const processingStatus = {}; // Об'єкт для зберігання статусу обробки
 
 let = promises = [];
 let controller; // Один controller для всіх запитів
@@ -48,33 +47,26 @@ app.post('/upload-multiple', upload.array('images', 300), async (req, res) => {
     }
 
     const { idQuery } = req.body;
-    dataIdQuery[idQuery] = { status: "Image processing", idQuery }
     console.log('req.idQuery', idQuery)
 
     // console.log(req.files[0])
     controller = new AbortController();
-
-    processingStatus.progress = 0;
-    processingStatus.status = 'processing';
-    processingStatus.total = req.files.length;
+    dataQuery[idQuery].download = 'processing';
+    dataQuery[idQuery].total = req.files.length;
 
     const nextFormData = generatorFormData(req)
     const nextServer = generateNewServer(workerServers)
     // Використовуємо цикл `for...of` для послідовного завантаження
-    const processedImages = [];
-    const processedImagesUrl = [];
 
+    // console.log('nextFormData', nextFormData)
 
-    CallServer.isServersTrue = new Array(numberServers).fill(true)
+    CallServer.isServersTrue[idQuery] = new Array(numberServers).fill('hello')
     const dataForCallServer = {
         controller,
         nextFormData,
         nextServer,
-        processingStatus,
-        processedImages,
-        processedImagesUrl,
         imagesDir,
-        idQuery: dataIdQuery[idQuery],
+        dataQueryId: dataQuery[idQuery],
         res,
     }
 
@@ -82,6 +74,40 @@ app.post('/upload-multiple', upload.array('images', 300), async (req, res) => {
         new CallServer(dataForCallServer);
     }
 
+});
+
+app.post('/init', (req, res) => {
+
+    const { idQuery, urlWorkServer: url } = req.body;
+
+    dataQuery[idQuery] = {
+        download: "Uploading files to the server",
+        id: idQuery,
+        progress: 0,
+        total: 0,
+        processingStatus: 'processing',
+        processedImages: [],
+    }
+
+    urlWorkServer.url = String(url)
+    console.log('req.body.idQuery', idQuery, url)
+    // processingStatus.progress = 0;
+    // processingStatus.total = 0;
+    // processingStatus.status = 'processing';
+    res.send('Дані проініціалізовано');
+});
+
+// Додайте новий ендпоінт для отримання статусу
+app.post('/status', (req, res) => {
+    const { idQuery } = req.body;
+    console.log('get status', idQuery)
+    // console.log(dataQuery)
+    res.json({
+        progress: dataQuery[idQuery]?.progress,
+        download: dataQuery[idQuery].download,
+        total: dataQuery[idQuery].total,
+        processingStatus: dataQuery[idQuery].processingStatus,
+    });
 });
 
 app.use('/images', express.static(imagesDir));
@@ -132,28 +158,7 @@ app.post('/cancel', (req, res) => {
     res.send('Запит скасовано');
 });
 
-app.post('/init_progress', (req, res) => {
-    const { idQuery, urlWorkServer: url } = req.body;
 
-    dataIdQuery[idQuery] = { status: "Uploading files to the server", idQuery }
-    urlWorkServer.url = String(url)
-    console.log('req.body.idQuery', idQuery, url)
-    processingStatus.progress = 0;
-    processingStatus.total = 0;
-    processingStatus.status = 'processing';
-    res.send('Дані проініціалізовано');
-});
-
-// Додайте новий ендпоінт для отримання статусу
-app.post('/status', (req, res) => {
-    const { idQuery } = req.body;
-    console.log('get status', idQuery)
-    // console.log(dataIdQuery)
-    res.json({ ...processingStatus, download: dataIdQuery[idQuery]?.status });
-    // res.json(processingStatus);
-
-
-});
 
 app.get('/statusres', (req, res) => {
     console.log('get status')
