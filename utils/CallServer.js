@@ -35,14 +35,12 @@ class CallServer {
 
             const { server } = this.nextServer();
             console.log(server)
-            console.log('this.controller.aborted', this.dataQueryId.controller.aborted)
-
+            console.log('this.controller.aborted', this.dataQueryId.controller.signal.aborted)
             const res = await sendData(server, formData, this.dataQueryId.controller)
 
             if (res) {
                 // console.log('res', res)
                 const base64Data = res[0].imageBase64.replace(/^data:image\/jpeg;base64,/, '');
-
                 const filePath = path.join(this.imagesDir, this.dataQueryId.id.toString());
                 const filePathName = path.join(filePath, res[0].fileName);
 
