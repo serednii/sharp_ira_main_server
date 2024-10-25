@@ -83,8 +83,9 @@ class CallServer {
                     throw new Error(`Помилка: ${archivePath} є директорією, а не файлом.`);
                 }
 
-                this.dataQueryId.download = "archive images"
-                const id = this.idQuery.toString()
+                this.dataQueryId.progress = this.dataQueryId.total;
+                this.dataQueryId.download = "archive images";
+                const id = this.idQuery.toString();
                 const newImagesDir = path.join(imagesDir, id);//Папка для нових фото
                 const newArchivePath = path.join(archiveDir, `${id}_images_archive.zip`);//Папка для архіва з фото
                 const downloadUrlArchive = `${urlWorkServer.url}/archive/${id}_images_archive.zip`//Імя архів з фотографіями
