@@ -1,6 +1,5 @@
 const archiver = require('archiver'); // Для створення архівів
 const fs = require('fs');
-const path = require('path');
 
 
 // // Перевірка, чи існує папка "archive", якщо ні — створюємо її
@@ -12,10 +11,9 @@ const path = require('path');
 
 const archiveImages = async (newImagesDir, newArchivePath, downloadUrlArchive) => {
     try {
-
-        if (!fs.existsSync(newImagesDir)) {
-            throw new Error(`Директорія ${newImagesDir} не існує`);
-        }
+        // if (!fs.existsSync(newImagesDir)) {
+        //     throw new Error(`Директорія ${newImagesDir} не існує`);
+        // }
 
         const output = fs.createWriteStream(newArchivePath);
         const archive = archiver('zip', {

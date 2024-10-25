@@ -11,8 +11,7 @@ const { urlWorkServer } = require('./const');
 class CallServer {
     static isServersTrue = {};
 
-    constructor({ controller, nextFormData, nextServer, imagesDir, dataQueryId, res }) {
-        this.controller = controller;
+    constructor({ nextFormData, nextServer, imagesDir, dataQueryId, res }) {
         this.nextFormData = nextFormData;
         this.nextServer = nextServer;
         this.res = res;
@@ -29,15 +28,16 @@ class CallServer {
         while (true) {
             if (finish) { break }
 
-            if (this.controller.signal.aborted) {
+            if (this.dataQueryId.controller.signal.aborted) {
                 this.dataQueryId.download = 'cancelled';
                 break;
             }
 
             const { server } = this.nextServer();
             console.log(server)
+            console.log('this.controller.aborted', this.dataQueryId.controller.aborted)
 
-            const res = await sendData(server, formData, this.controller)
+            const res = await sendData(server, formData, this.dataQueryId.controller)
 
             if (res) {
                 // console.log('res', res)
@@ -64,8 +64,10 @@ class CallServer {
     }
 
     async #checkServersTrue() {
+
         console.log(CallServer.isServersTrue[this.idQuery])
         CallServer.isServersTrue[this.idQuery].pop();
+
         if (CallServer.isServersTrue[this.idQuery].length === 0) {
             try {
                 // Перевіряємо існування вихідної директорії
@@ -85,17 +87,18 @@ class CallServer {
 
                 this.dataQueryId.download = "archive images"
                 const id = this.idQuery.toString()
-                const newImagesDir = path.join(imagesDir, id);
-                const newArchivePath = path.join(archiveDir, `${id}_images_archive.zip`);
-                const downloadUrlArchive = `${urlWorkServer.url}/archive/${id}_images_archive.zip`
-
+                const newImagesDir = path.join(imagesDir, id);//Папка для нових фото
+                const newArchivePath = path.join(archiveDir, `${id}_images_archive.zip`);//Папка для архіва з фото
+                const downloadUrlArchive = `${urlWorkServer.url}/archive/${id}_images_archive.zip`//Імя архів з фотографіями
                 const downloadLink = await archiveImages(newImagesDir, newArchivePath, downloadUrlArchive);
-                setTimeout(() => { deleteArchive(newArchivePath) }, 60000 * 3);
+
+                setTimeout(() => { deleteArchive(newArchivePath) }, 60000);
                 await deleteDirectory(newImagesDir);
                 // await deleteFilesInDirectory(this.idQuery.idQuery);
                 this.dataQueryId.download = "Downloading photos from the server"
                 this.dataQueryId.processingStatus = 'cancelled';
                 this.res.json({ processedImages: this.dataQueryId.processedImages, downloadLink });
+
                 console.log('url', downloadLink)
             } catch (error) {
                 console.log(error)
