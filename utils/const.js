@@ -5,11 +5,11 @@ const imagesDir = path.join(projectRoot, 'processed_images'); // Директо�
 const archiveDir = path.join(projectRoot, 'archive'); // Директорія для архіву
 const archivePath = path.join(archiveDir, 'images_archive.zip'); // Шлях до архіву, включаючи ім'я файлу
 
-const numberServers = 1;
+const numberServers = 10;
 
-// const workerServers = Array.from({ length: numberServers }).map((_, i) => `http://localhost:${8100 + i}/process-images`)
+const workerServers = Array.from({ length: numberServers }).map((_, i) => `http://localhost:${8100 + i}/process-images`)
 
-const workerServers = ['https://sharpiraworksserver-production.up.railway.app/process-images']
+// const workerServers = ['https://sharpiraworksserver-production.up.railway.app/process-images']
 
 
 const urlWorkServer = { url: "" };
