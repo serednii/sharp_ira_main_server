@@ -108,11 +108,15 @@ app.post('/status', (req, res) => {
     });
 });
 
-app.post('/cancel', (req, res) => {
+app.post('/abort', (req, res) => {
     const { idQuery } = req.body;
-    console.log('cancell', idQuery)
+    console.log('abort', idQuery)
+    console.log('abort', dataQuery[idQuery].controller.signal.aborted)
+
     dataQuery[idQuery].processingStatus = 'cancelled'
     dataQuery[idQuery].controller.abort(); // Скасовуємо всі запити
+    console.log('abort', dataQuery[idQuery].controller.signal.aborted)
+
     res.send('Запит скасовано');
 });
 app.use('/images', express.static(imagesDir));
