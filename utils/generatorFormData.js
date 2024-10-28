@@ -45,7 +45,7 @@ const { imagesDir } = require('./const');
 // };
 const generatorFormData = (req) => {
     let index = 0
-    let newFormsData = null
+    let newFormsData;
     try {
         newFormsData = req?.files.map((file) => {
             const formData = new FormData();
