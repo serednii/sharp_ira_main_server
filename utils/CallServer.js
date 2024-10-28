@@ -39,6 +39,7 @@ class CallServer {
                 //     })
                 //     console.log(`Сервер  зупинено ` + this.indexProcess);
                 // }
+
                 if (this.dataQueryId.controller.signal.aborted) {
                     this.dataQueryId.download = 'cancelled';
                     break;

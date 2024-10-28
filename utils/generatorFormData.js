@@ -45,28 +45,28 @@ const { imagesDir } = require('./const');
 // };
 const generatorFormData = (req) => {
     let index = 0
+    let newFormsData = null
+    try {
+        newFormsData = req?.files.map((file) => {
+            const formData = new FormData();
+            formData.setMaxListeners(20);
+            formData.append('processType', req?.body?.processType);
+            formData.append('images', file?.buffer, { filename: file?.originalname });
+            formData.append('resizeWidth', req?.body?.resizeWidth);
+            formData.append('resizeHeight', req?.body?.resizeHeight);
+            formData.append('rotateDegrees', req?.body?.rotateDegrees);
+            formData.append('blurLevel', req?.body?.blurLevel);
+            formData.append('brightnessLevel', req?.body?.brightnessLevel);
+            formData.append('contrastLevel', req?.body?.contrastLevel);
+            formData.append('cropWidth', req?.body?.cropWidth);
+            formData.append('cropHeight', req?.body?.cropHeight);
+            formData.append('name', req?.files[index]?.originalname);
+            return formData;
+        })
 
-try{
-    const newFormsData = req?.files.map((file) => {
-        const formData = new FormData();
-        formData.setMaxListeners(20);
-        formData.append('processType', req?.body?.processType);
-        formData.append('images', file?.buffer, { filename: file?.originalname });
-        formData.append('resizeWidth', req?.body?.resizeWidth);
-        formData.append('resizeHeight', req?.body?.resizeHeight);
-        formData.append('rotateDegrees', req?.body?.rotateDegrees);
-        formData.append('blurLevel', req?.body?.blurLevel);
-        formData.append('brightnessLevel', req?.body?.brightnessLevel);
-        formData.append('contrastLevel', req?.body?.contrastLevel);
-        formData.append('cropWidth', req?.body?.cropWidth);
-        formData.append('cropHeight', req?.body?.cropHeight);
-        formData.append('name', req?.files[index]?.originalname);
-        return formData;
-    })
-
-} catch (error) {
-    console.log(error)
-}
+    } catch (error) {
+        console.log(error)
+    }
 
     const nextFormData = () => {
         try {
