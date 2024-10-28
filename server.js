@@ -12,7 +12,7 @@ const { generatorFormData } = require("./utils/generatorFormData");
 const { generateNewServer } = require("./utils/generateNewServer");
 const { CallServer } = require("./utils/CallServer");
 const { archiveImages } = require("./utils/archiveImages");
-const { linkWorkServers, NUMBER_IMAGE_TO_SERVER, imagesDir, archiveDir, workerServers, numberServers, urlWorkServer } = require('./utils/const');
+const { NUMBER_IMAGE_TO_SERVER, archiveDir, pauseSend, workerServers, numberServers, urlWorkServer } = require('./utils/const');
 const { deleteArchive } = require('./utils/deleteFilesInDirectory');
 const { ServerPorts } = require('./utils/ServerPorts');
 
@@ -48,17 +48,12 @@ app.use(cors());
 
 app.post('/upload-multiple', upload.array('images', 300), async (req, res) => {
     try {
-
-        // console.clear()
         console.log('upload-multiple')
 
         if (!req.files || req.files.length === 0) {
             return res.status(400).send('Будь ласка, завантажте зображення');
         }
 
-        if (!fs.existsSync(imagesDir)) {
-            fs.mkdirSync(imagesDir);
-        }
 
         if (!fs.existsSync(archiveDir)) {
             fs.mkdirSync(archiveDir);
@@ -83,7 +78,6 @@ app.post('/upload-multiple', upload.array('images', 300), async (req, res) => {
             nextServer,
             dataQueryId: dataQuery[idQuery],
             res,
-            linkWorkServers,
         }
 
         for (let i = 0; i < dataQuery[idQuery].serverPorts.length; i++) {
@@ -104,6 +98,7 @@ app.post('/init', (req, res) => {
 
         const { idQuery, urlMainServer, numberImage, } = req.body;
         //Перевірка на правильність даних
+
         if (!numberImage || !idQuery || !urlMainServer) {
             res.status(400).send('неправильный, некорректный запрос.');
         }
@@ -115,17 +110,14 @@ app.post('/init', (req, res) => {
 
         if (ServerPorts.freePorts.length > 1) {
             //якщо є вільні порти то створюємо нового клієнта
-
             const controller = new AbortController();
             // console.log('ServerPorts.ports', ServerPorts.freePorts);
             const serverPorts = new ServerPorts(numberServers);
             // console.log('ServerPorts.ports', ServerPorts.freePorts);
             dataSend.ports = serverPorts.ports.length;
             // console.log('serverPorts', serverPorts.ports);
-            createServers(serverPorts.ports);
-            setTimeout(() => {
 
-            }, (5 * 60 * 1000));
+
             dataQuery[idQuery] = {
                 controller,
                 id: idQuery,
@@ -135,7 +127,18 @@ app.post('/init', (req, res) => {
                 processedImages: [],
                 serverPorts,
                 flag: 0,
+                linkWorkServers: [],
             }
+
+            createServers(serverPorts.ports, idQuery);
+            setTimeout(() => {
+                try {
+                    dataQuery[idQuery].linkWorkServers.forEach(server => server.close(() => console.log(`Сервер  зупинено`)));
+                    dataQuery[idQuery].linkWorkServers.length = 0;
+                } catch (error) {
+                    console.log('abort ', error)
+                }
+            }, (5 * 60 * 1000));
 
             urlWorkServer.url = urlMainServer
         } else {
@@ -169,11 +172,17 @@ app.post('/status', (req, res) => {
     }
 });
 
-app.get('/killer', (req, res) => {
-    console.log('serverStopped')
-    linkWorkServers[0].close(() => {
-        console.log(`Сервер  зупинено`);
-    })
+app.post('/killer', (req, res) => {
+    let { pause } = req.body;
+    if (pause > 3000) {
+        pause = 3000
+    }
+    pauseSend.pause = parseInt(pause);
+    console.log(pauseSend)
+    // console.log('serverStopped')
+    // dataQuery[idQuery].linkWorkServers[0].close(() => {
+    //     console.log(`Сервер  зупинено`);
+    // })
     // linkWorkServers[1].close(() => {
     //     console.log(`Сервер  зупинено`);
     // })
@@ -191,23 +200,15 @@ app.post('/abort', (req, res) => {
         // dataQuery[idQuery].controller = controller;
         console.log('abort', idQuery)
         // console.log('abort', dataQuery[idQuery].controller.signal.aborted)
-        dataQuery[idQuery].processingStatus = 'cancelled';
-        dataQuery[idQuery].controller.abort(); // Скасовуємо всі запити
+        // dataQuery[idQuery].processingStatus = 'cancelled';
+        // dataQuery[idQuery].controller.abort(); // Скасовуємо всі запити
+        // dataQuery[idQuery].linkWorkServers.forEach(server => server.close(() => console.log(`Сервер  зупинено`)));
+        // dataQuery[idQuery].linkWorkServers.length = 0;
         // dataQuery[idQuery].serverPorts.returnPorts();//повертаємо порти
-        setTimeout(() => {
-            // try {
-            //     const id = idQuery.toString();
-            //     const newImagesDir = path.join(imagesDir, id);//Папка для нових фото
-            //     const newArchivePath = path.join(archiveDir, `${id}_images_archive.zip`);//Папка для архіва з фото
-            //     deleteArchive(newArchivePath);
-            //     deleteDirectory(newImagesDir);
-            // } catch (error) {
-            //     console.log('abort ', error)
-            // }
-            //добавити видалення фото і архівів
-            delete dataQuery[idQuery];
+        // setTimeout(() => {
+        //     delete dataQuery[idQuery];
+        // }, 15000)
 
-        }, 15000)
         console.log('abort', dataQuery[idQuery].controller.signal.aborted);
 
         res.send('Запит скасовано');
@@ -216,7 +217,6 @@ app.post('/abort', (req, res) => {
     }
 });
 
-app.use('/images', express.static(imagesDir));
 
 // app.use('/archive', express.static(path.join(__dirname, 'archive')));
 
@@ -266,7 +266,7 @@ app.listen(port, () => {
 
 
 // Функція для створення сервера 
-function createServer(port) {
+function createServer(port, idQuery) {
     const app = express();
 
     // Використовуємо CORS для дозволу запитів з інших доменів
@@ -359,7 +359,7 @@ function createServer(port) {
         console.log(`Оброблювальний сервер працює на http://localhost:${port}`);
     });
 
-    linkWorkServers.push(linkServer)
+    dataQuery[idQuery].linkWorkServers.push(linkServer)
 
     app.get('/status', (req, res) => {
         console.log('get status port  ', port)
@@ -375,13 +375,13 @@ function createServer(port) {
 //     }
 // };
 
-function createServers(ports) {
+function createServers(ports, idQuery) {
     console.log('portsportsportsportsports', ports)
     ports.forEach((port) => {
-        createServer(port);
+        createServer(port, idQuery);
     })
 };
-// createServers([8106, 8107, 8108, 8109])
+// createServers([8106, 8107, 8108, 8109], 54654)
 
 
 

@@ -9,7 +9,7 @@ const fs = require('fs');
 
 
 
-const archiveImages = async (newImagesDir, newArchivePath, downloadUrlArchive) => {
+const archiveImages = async (newImagesDir, newArchivePath) => {
     try {
         if (!fs.existsSync(newImagesDir)) {
             throw new Error(`Директорія ${newImagesDir} не існує`);
@@ -32,7 +32,7 @@ const archiveImages = async (newImagesDir, newArchivePath, downloadUrlArchive) =
             output.on('close', async () => {
                 try {
                     console.log(`${archive.pointer()} байт записано до архіву`);
-                    resolve(downloadUrlArchive);
+                    resolve('Archived successful');
                 } catch (closeError) {
                     console.error('Помилка при завершенні архівації:', closeError);
                     reject(closeError);

@@ -3,24 +3,24 @@ const path = require('path');
 const fs = require('fs');
 const { archiveImages } = require('./archiveImages');
 const { deleteDirectory, deleteArchive } = require('./deleteFilesInDirectory');
-const { archivePath, imagesDir, archiveDir } = require('./const');
-const { urlWorkServer } = require('./const');
+const { archivePath, archiveDir } = require('./const');
+const { urlWorkServer, pauseSend } = require('./const');
 const { ServerPorts } = require('./ServerPorts');
-const { linkWorkServers } = require('./const');
+const { archiveFromBuffers } = require('./archiveImagesBuffer');
 
-let flag = 0
-let knacked = false
+// let flag = 0
+// let knacked = false
 class CallServer {
     static isServersTrue = {};
     static process = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    constructor({ generatorData, nextServer, dataQueryId, res, serverPorts, linkWorkServers }, indexProcess) {
+
+    constructor({ generatorData, nextServer, dataQueryId, res, serverPorts }, indexProcess) {
         this.generatorData = generatorData;
         this.nextServer = nextServer;
         this.res = res;
         this.dataQueryId = dataQueryId;
         this.idQuery = dataQueryId.id;
         this.serverPorts = serverPorts;
-        this.linkWorkServers = linkWorkServers;
         this.indexProcess = indexProcess;
         this.#callNewServer();
         // console.log('dataQueryId', dataQueryId);
@@ -39,7 +39,12 @@ class CallServer {
                 //     })
                 //     console.log(`Сервер  зупинено ` + this.indexProcess);
                 // }
-                await new Promise(resolve => setTimeout(resolve, 300));
+
+                if (urlWorkServer.url !== "http://localhost:8000") {
+                    console.log('TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT')
+                    await new Promise(resolve => setTimeout(resolve, pauseSend.pause));
+                }
+
                 if (this.dataQueryId.controller.signal.aborted) {
                     this.dataQueryId.download = 'cancelled';
                     break;
@@ -79,16 +84,11 @@ class CallServer {
                     // console.log('33333333333333333333333333333333333333333333333333 ' + this.indexProcess)
 
                     const base64Data = res[0].imageBase64.replace(/^data:image\/jpeg;base64,/, '');
-                    const filePath = path.join(imagesDir, this.dataQueryId.id.toString());
-                    const filePathName = path.join(filePath, res[0].fileName);
-
-                    if (!fs.existsSync(filePath)) {
-                        fs.mkdirSync(filePath);
-                    }
-
-                    fs.writeFileSync(filePathName, Buffer.from(base64Data, 'base64'));
+                    const imageBuffer = Buffer.from(base64Data, 'base64');
                     // CallServer.process[this.indexProcess]++
-                    this.dataQueryId.processedImages.push(res)
+                    this.dataQueryId.processedImages.push({ img: imageBuffer, name: res[0].fileName })
+                    // this.dataQueryId.processedImages.push(res)
+
                     this.dataQueryId.progress += 1;
                     ({ formData, index, finish } = this.generatorData.nextFormData())
                     // console.log('444444444444444444444444444444444444444444444444444444444 ' + this.indexProcess)
@@ -127,7 +127,7 @@ class CallServer {
     }
 
     async #checkServersTrue() {
-        console.log('999999999999999999999999999999999999999999999999999999999999999 ' + this.indexProcess)
+        // console.log('999999999999999999999999999999999999999999999999999999999999999 ' + this.indexProcess)
         try {
 
             CallServer.isServersTrue[this.idQuery].pop();
@@ -135,15 +135,11 @@ class CallServer {
 
             if (CallServer.isServersTrue[this.idQuery].length === 0) {
                 this.dataQueryId.serverPorts.returnPorts();
-                linkWorkServers.forEach(server => server.close(() => console.log(`Сервер  зупинено`)));
-                linkWorkServers.length = 0;
+                this.dataQueryId.linkWorkServers.forEach(server => server.close(() => console.log(`Сервер  зупинено`)));
+                this.dataQueryId.linkWorkServers.length = 0;
 
                 console.log('ServerPorts.ports**********************************', ServerPorts.freePorts)
                 // Перевіряємо існування вихідної директорії
-
-                if (!fs.existsSync(imagesDir)) {
-                    fs.mkdirSync(imagesDir);
-                }
 
                 if (!fs.existsSync(archiveDir)) {
                     fs.mkdirSync(archiveDir);
@@ -155,25 +151,20 @@ class CallServer {
                 }
 
                 const id = this.idQuery.toString();
-                const newImagesDir = path.join(imagesDir, id);//Папка для нових фото
-
-                if (this.dataQueryId.controller.signal.aborted) {
-
-                    await deleteDirectory(newImagesDir);
-                    throw new Error('Aborted process')
-                }
 
 
                 this.dataQueryId.progress = this.dataQueryId.total;
                 const newArchivePath = path.join(archiveDir, `${id}_images_archive.zip`);//Папка для архіва з фото
-                const downloadUrlArchive = `${urlWorkServer.url}/archive/${id}_images_archive.zip`//Імя архів з фотографіями
+                const downloadLink = `${urlWorkServer.url}/archive/${id}_images_archive.zip`//Імя архів з фотографіями
                 this.dataQueryId.processingStatus = 'archive images';
-                const downloadLink = await archiveImages(newImagesDir, newArchivePath, downloadUrlArchive);
+                // const downloadLink = await archiveImages(newImagesDir, newArchivePath);
+                await archiveFromBuffers(this.dataQueryId.processedImages, newArchivePath);
+
 
                 setTimeout(() => { deleteArchive(newArchivePath) }, 60000);
-                await deleteDirectory(newImagesDir);
                 this.dataQueryId.processingStatus = "downloading"
                 this.res.json({ processedImages: this.dataQueryId.processedImages, downloadLink });
+
                 // console.log('CallServer.process', CallServer.process)
                 // console.log('this.dataQueryId.processedImages', this.dataQueryId.processedImages.length)
                 // CallServer.process = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
