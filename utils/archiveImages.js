@@ -11,9 +11,9 @@ const fs = require('fs');
 
 const archiveImages = async (newImagesDir, newArchivePath, downloadUrlArchive) => {
     try {
-        // if (!fs.existsSync(newImagesDir)) {
-        //     throw new Error(`Директорія ${newImagesDir} не існує`);
-        // }
+        if (!fs.existsSync(newImagesDir)) {
+            throw new Error(`Директорія ${newImagesDir} не існує`);
+        }
 
         const output = fs.createWriteStream(newArchivePath);
         const archive = archiver('zip', {
@@ -71,34 +71,6 @@ const archiveImages = async (newImagesDir, newArchivePath, downloadUrlArchive) =
         throw error;
     }
 };
-// const archiveImages = async (newImagesDir, newArchivePath, downloadUrlArchive) => {
-//     const output = fs.createWriteStream(newArchivePath); // Створюємо потік для запису архіву
-//     const archive = archiver('zip', {
-//         zlib: { level: 9 } // Опція для максимального стиснення
-//     });
 
-//     return new Promise((resolve, reject) => {
-//         //папка з малюнками  + папка idQuery
-//         console.log('newImagesDir', newImagesDir)
-
-//         output.on('close', async function () {
-//             console.log(`${archive.pointer()} байт записано до архіву`);
-//             resolve(downloadUrlArchive); // Повертаємо URL для завантаження
-//         });
-
-//         archive.on('error', function (err) {
-//             reject(err); // Відхиляємо Promise у разі помилки
-//         });
-
-//         archive.pipe(output);
-
-//         // Додаємо всі зображення з папки до архіву
-//         archive.directory(newImagesDir, false);
-
-//         // Завершуємо архів
-//         archive.finalize();
-
-//     });
-// };
 
 module.exports = { archiveImages };
