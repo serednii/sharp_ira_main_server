@@ -12,7 +12,7 @@ const { generatorFormData } = require("./utils/generatorFormData");
 const { generateNewServer } = require("./utils/generateNewServer");
 const { CallServer } = require("./utils/CallServer");
 const { archiveImages } = require("./utils/archiveImages");
-const { NUMBER_IMAGE_TO_SERVER, imagesDir, archiveDir, workerServers, numberServers, urlWorkServer } = require('./utils/const');
+const { NUMBER_IMAGE_TO_SERVER, archiveDir, pauseSend, workerServers, numberServers, urlWorkServer } = require('./utils/const');
 const { deleteArchive } = require('./utils/deleteFilesInDirectory');
 const { ServerPorts } = require('./utils/ServerPorts');
 
@@ -48,17 +48,12 @@ app.use(cors());
 
 app.post('/upload-multiple', upload.array('images', 300), async (req, res) => {
     try {
-
-        // console.clear()
         console.log('upload-multiple')
 
         if (!req.files || req.files.length === 0) {
             return res.status(400).send('Будь ласка, завантажте зображення');
         }
 
-        if (!fs.existsSync(imagesDir)) {
-            fs.mkdirSync(imagesDir);
-        }
 
         if (!fs.existsSync(archiveDir)) {
             fs.mkdirSync(archiveDir);
@@ -138,13 +133,6 @@ app.post('/init', (req, res) => {
             createServers(serverPorts.ports, idQuery);
             setTimeout(() => {
                 try {
-                    // const id = idQuery.toString();
-                    // const newImagesDir = path.join(imagesDir, id);//Папка для нових фото
-                    // const newArchivePath = path.join(archiveDir, `${id}_images_archive.zip`);//Папка для архіва з фото
-                    // deleteArchive(newArchivePath);
-                    // deleteDirectory(newImagesDir);
-
-
                     dataQuery[idQuery].linkWorkServers.forEach(server => server.close(() => console.log(`Сервер  зупинено`)));
                     dataQuery[idQuery].linkWorkServers.length = 0;
                 } catch (error) {
@@ -184,12 +172,17 @@ app.post('/status', (req, res) => {
     }
 });
 
-app.get('/killer', (req, res) => {
-    const { idQuery } = req.body;
-    console.log('serverStopped')
-    dataQuery[idQuery].linkWorkServers[0].close(() => {
-        console.log(`Сервер  зупинено`);
-    })
+app.post('/killer', (req, res) => {
+    let { pause } = req.body;
+    if (pause > 3000) {
+        pause = 3000
+    }
+    pauseSend.pause = parseInt(pause);
+    console.log(pauseSend)
+    // console.log('serverStopped')
+    // dataQuery[idQuery].linkWorkServers[0].close(() => {
+    //     console.log(`Сервер  зупинено`);
+    // })
     // linkWorkServers[1].close(() => {
     //     console.log(`Сервер  зупинено`);
     // })
@@ -207,25 +200,15 @@ app.post('/abort', (req, res) => {
         // dataQuery[idQuery].controller = controller;
         console.log('abort', idQuery)
         // console.log('abort', dataQuery[idQuery].controller.signal.aborted)
-        dataQuery[idQuery].processingStatus = 'cancelled';
-        dataQuery[idQuery].controller.abort(); // Скасовуємо всі запити
-        dataQuery[idQuery].linkWorkServers.forEach(server => server.close(() => console.log(`Сервер  зупинено`)));
-        dataQuery[idQuery].linkWorkServers.length = 0;
+        // dataQuery[idQuery].processingStatus = 'cancelled';
+        // dataQuery[idQuery].controller.abort(); // Скасовуємо всі запити
+        // dataQuery[idQuery].linkWorkServers.forEach(server => server.close(() => console.log(`Сервер  зупинено`)));
+        // dataQuery[idQuery].linkWorkServers.length = 0;
         // dataQuery[idQuery].serverPorts.returnPorts();//повертаємо порти
-        setTimeout(() => {
-            // try {
-            //     const id = idQuery.toString();
-            //     const newImagesDir = path.join(imagesDir, id);//Папка для нових фото
-            //     const newArchivePath = path.join(archiveDir, `${id}_images_archive.zip`);//Папка для архіва з фото
-            //     deleteArchive(newArchivePath);
-            //     deleteDirectory(newImagesDir);
-            // } catch (error) {
-            //     console.log('abort ', error)
-            // }
-            //добавити видалення фото і архівів
-            delete dataQuery[idQuery];
+        // setTimeout(() => {
+        //     delete dataQuery[idQuery];
+        // }, 15000)
 
-        }, 15000)
         console.log('abort', dataQuery[idQuery].controller.signal.aborted);
 
         res.send('Запит скасовано');
@@ -234,7 +217,6 @@ app.post('/abort', (req, res) => {
     }
 });
 
-app.use('/images', express.static(imagesDir));
 
 // app.use('/archive', express.static(path.join(__dirname, 'archive')));
 
