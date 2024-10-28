@@ -4,23 +4,22 @@ const fs = require('fs');
 const { archiveImages } = require('./archiveImages');
 const { deleteDirectory, deleteArchive } = require('./deleteFilesInDirectory');
 const { archivePath, imagesDir, archiveDir } = require('./const');
-const { urlWorkServer } = require('./const');
+const { urlWorkServer, pauseSend } = require('./const');
 const { ServerPorts } = require('./ServerPorts');
-const { linkWorkServers } = require('./const');
+
 
 let flag = 0
 let knacked = false
 class CallServer {
     static isServersTrue = {};
     static process = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    constructor({ generatorData, nextServer, dataQueryId, res, serverPorts, linkWorkServers }, indexProcess) {
+    constructor({ generatorData, nextServer, dataQueryId, res, serverPorts }, indexProcess) {
         this.generatorData = generatorData;
         this.nextServer = nextServer;
         this.res = res;
         this.dataQueryId = dataQueryId;
         this.idQuery = dataQueryId.id;
         this.serverPorts = serverPorts;
-        this.linkWorkServers = linkWorkServers;
         this.indexProcess = indexProcess;
         this.#callNewServer();
         // console.log('dataQueryId', dataQueryId);
@@ -39,7 +38,7 @@ class CallServer {
                 //     })
                 //     console.log(`Сервер  зупинено ` + this.indexProcess);
                 // }
-                await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise(resolve => setTimeout(resolve, pauseSend));
                 if (this.dataQueryId.controller.signal.aborted) {
                     this.dataQueryId.download = 'cancelled';
                     break;
@@ -88,7 +87,9 @@ class CallServer {
 
                     fs.writeFileSync(filePathName, Buffer.from(base64Data, 'base64'));
                     // CallServer.process[this.indexProcess]++
-                    this.dataQueryId.processedImages.push(res)
+                    this.dataQueryId.processedImages.push(imageBuffer)
+                    // this.dataQueryId.processedImages.push(res)
+
                     this.dataQueryId.progress += 1;
                     ({ formData, index, finish } = this.generatorData.nextFormData())
                     // console.log('444444444444444444444444444444444444444444444444444444444 ' + this.indexProcess)
@@ -127,7 +128,7 @@ class CallServer {
     }
 
     async #checkServersTrue() {
-        console.log('999999999999999999999999999999999999999999999999999999999999999 ' + this.indexProcess)
+        // console.log('999999999999999999999999999999999999999999999999999999999999999 ' + this.indexProcess)
         try {
 
             CallServer.isServersTrue[this.idQuery].pop();
@@ -135,8 +136,8 @@ class CallServer {
 
             if (CallServer.isServersTrue[this.idQuery].length === 0) {
                 this.dataQueryId.serverPorts.returnPorts();
-                linkWorkServers.forEach(server => server.close(() => console.log(`Сервер  зупинено`)));
-                linkWorkServers.length = 0;
+                this.dataQueryId.linkWorkServers.forEach(server => server.close(() => console.log(`Сервер  зупинено`)));
+                this.dataQueryId.linkWorkServers.length = 0;
 
                 console.log('ServerPorts.ports**********************************', ServerPorts.freePorts)
                 // Перевіряємо існування вихідної директорії
@@ -174,6 +175,7 @@ class CallServer {
                 await deleteDirectory(newImagesDir);
                 this.dataQueryId.processingStatus = "downloading"
                 this.res.json({ processedImages: this.dataQueryId.processedImages, downloadLink });
+
                 // console.log('CallServer.process', CallServer.process)
                 // console.log('this.dataQueryId.processedImages', this.dataQueryId.processedImages.length)
                 // CallServer.process = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];

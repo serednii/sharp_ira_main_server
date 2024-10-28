@@ -1,4 +1,4 @@
-const NUMBER_FRI_PORTS = 10;
+const NUMBER_FRI_PORTS = 200;
 const START_PORTS = 8100;
 
 class ServerPorts {
