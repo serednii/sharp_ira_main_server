@@ -39,7 +39,7 @@ class CallServer {
                 //     })
                 //     console.log(`Сервер  зупинено ` + this.indexProcess);
                 // }
-
+                await new Promise(resolve => setTimeout(resolve, 300));
                 if (this.dataQueryId.controller.signal.aborted) {
                     this.dataQueryId.download = 'cancelled';
                     break;
