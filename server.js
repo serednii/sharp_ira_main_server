@@ -226,8 +226,6 @@ app.post('/abort', (req, res) => {
 // Маршрут для завантаження конкретного файлу
 app.get('/archive/:file', (req, res) => {
     try {
-
-
         const filePath = path.join(archiveDir, req.params.file);
         console.log('archive/:file', req.params.file)
         // Перевіряємо, чи існує файл
@@ -256,13 +254,6 @@ app.get('/archive/:file', (req, res) => {
 app.listen(port, () => {
     console.log(`Центральний сервер працює на http://localhost:${port}`);
 });
-
-
-
-
-
-
-
 
 
 // Функція для створення сервера 
