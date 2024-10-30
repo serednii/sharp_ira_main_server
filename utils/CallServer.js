@@ -86,7 +86,7 @@ class CallServer {
                     const base64Data = res[0].imageBase64.replace(/^data:image\/jpeg;base64,/, '');
                     const imageBuffer = Buffer.from(base64Data, 'base64');
                     // CallServer.process[this.indexProcess]++
-                    this.dataQueryId.processedImages.push({ img: imageBuffer, name: res[0].fileName })
+                    this.dataQueryId.processedImages.push({ img: imageBuffer, name: res[0].fileName, res })
                     // this.dataQueryId.processedImages.push(res)
 
                     this.dataQueryId.progress += 1;
