@@ -1,7 +1,7 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
+const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
 
@@ -11,6 +11,8 @@ const USERS_FILE = path.join(__dirname, 'users.json');
 
 app.use(bodyParser.json());
 app.use(cors());
+
+
 // Ініціалізуємо файл, якщо він не існує
 if (!fs.existsSync(USERS_FILE)) {
     fs.writeFileSync(USERS_FILE, JSON.stringify([]));
